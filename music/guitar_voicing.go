@@ -1,9 +1,5 @@
 package music
 
-import (
-	"math"
-)
-
 type GuitarChordVoicing struct {
 	Chord     Chord  // The specific chord this voicing represents
 	Fingering [6]int // -1 for muted, 0 for open, >0 for fret number
@@ -17,40 +13,6 @@ type Barre struct {
 	Fret        int
 	StartString int
 	EndString   int
-}
-
-type PlayedString struct {
-	IsMuted     bool
-	Fret        int // -1 for muted, 0 for open, >0 for fret number
-	StringIndex int // 0-5 (high E to low E)
-	Tuning      Tuning
-}
-
-func (p PlayedString) GetNote() Note {
-	if p.IsMuted {
-		return Note{} // Return empty note for muted strings
-	}
-	return CalculateNote(p.Tuning.Strings[p.StringIndex], p.Fret)
-}
-
-func (p PlayedString) String() string {
-	if p.IsMuted {
-		return "X"
-	}
-
-	return p.GetNote().String()
-}
-
-func (c *GuitarChordVoicing) CalculateNotes(tuning Tuning) [6]PlayedString {
-	notes := [6]PlayedString{}
-	for i, fret := range c.Fingering {
-		if fret == -1 {
-			notes[i] = PlayedString{IsMuted: true, Fret: -1, StringIndex: i, Tuning: tuning}
-		} else {
-			notes[i] = PlayedString{IsMuted: false, Fret: fret, StringIndex: i, Tuning: tuning}
-		}
-	}
-	return notes
 }
 
 // GetAverageFretPosition calculates the average fret position of played notes
@@ -83,38 +45,49 @@ func (v *GuitarChordVoicing) GetMinFret() int {
 	return minFret
 }
 
+// MatchesChord reports whether every played pitch class is a chord tone and every
+// required tone is present.
 func (v *GuitarChordVoicing) MatchesChord(tuning Tuning) bool {
-	playedStrings := v.CalculateNotes(tuning)
-	playedNotes := make(map[int]bool)
+	all, required := v.Chord.masks()
+	present := v.pitchClassMask(tuning)
+	return present&^all == 0 && present&required == required
+}
 
-	for _, playedString := range playedStrings {
-		if playedString.Fret >= 0 {
-			note := playedString.GetNote()
-			if !v.Chord.IsNoteInChord(note) {
-				return false // Non-chord tone found
+func (v *GuitarChordVoicing) pitchClassMask(tuning Tuning) uint16 {
+	var present uint16
+	for s, fret := range v.Fingering {
+		if fret >= 0 {
+			present |= 1 << mod12(tuning.Strings[s].SemitoneValue()+fret)
+		}
+	}
+	return present
+}
+
+// BassPitch returns the MIDI pitch of the lowest-sounding played string, or -1 if none.
+func (v *GuitarChordVoicing) BassPitch(tuning Tuning) int {
+	bass := -1
+	for s, fret := range v.Fingering {
+		if fret >= 0 {
+			if p := tuning.Strings[s].MIDI() + fret; bass < 0 || p < bass {
+				bass = p
 			}
-			playedNotes[note.SemitoneValue()] = true
 		}
 	}
+	return bass
+}
 
-	// Always require the root
-	rootSemitone := v.Chord.Root.SemitoneValue()
-	if !playedNotes[rootSemitone] {
-		return false
-	}
-
-	// For extended chords, require the highest extension
-	chordIntervals := v.Chord.GetChordIntervals()
-	if len(chordIntervals) > 3 { // Has extensions beyond triad
-		// Require the highest extension (7th for 7th chords, 9th for 9th chords, etc.)
-		highestInterval := chordIntervals[len(chordIntervals)-1]
-		extensionSemitone := (rootSemitone + highestInterval) % 12
-		if !playedNotes[extensionSemitone] {
-			return false // Missing required extension
+// ToneIndices returns, per string (high→low), the index into Chord.Quality.Tones()
+// of the note played, or -1 for a muted string or a non-chord tone.
+func (v *GuitarChordVoicing) ToneIndices(tuning Tuning) [6]int {
+	at := v.Chord.toneAt()
+	var idx [6]int
+	for s, fret := range v.Fingering {
+		idx[s] = -1
+		if fret >= 0 {
+			idx[s] = at[mod12(tuning.Strings[s].SemitoneValue()+fret)]
 		}
 	}
-
-	return true
+	return idx
 }
 
 func (v *GuitarChordVoicing) IsPlayable() bool {
@@ -144,7 +117,7 @@ func nonBarreChordPlayable(fingering [6]int) bool {
 }
 
 func barreChordPlayable(fingering [6]int, barreFret int) bool {
-	return fretSpanPlayable(fingering, 3) && allPlayedStringsContiguous(fingering) && frettedStringsGreaterThanFret(fingering, barreFret) && stringSpanPlayable(fingering, barreFret, 4)
+	return fretSpanPlayable(fingering, 3) && allPlayedStringsContiguous(fingering) && frettedStringsGreaterThanFret(fingering, barreFret) && stringSpanPlayable(fingering, barreFret, 4) && frettedStringCountPlayable(fingering, barreFret)
 }
 
 func frettedStringsGreaterThanFret(fingering [6]int, fret int) bool {
@@ -259,21 +232,4 @@ func allPlayedStringsContiguous(fingering [6]int) bool {
 	}
 
 	return true
-}
-
-// CalculateFingerMovement calculates the total finger movement distance between this voicing and another
-func (v *GuitarChordVoicing) CalculateFingerMovement(other GuitarChordVoicing) float64 {
-	totalMovement := 0.0
-
-	for i := 0; i < 6; i++ {
-		fromFret := v.Fingering[i]
-		toFret := other.Fingering[i]
-
-		// Skip muted strings and calculate movement
-		if fromFret >= 0 && toFret >= 0 {
-			totalMovement += math.Abs(float64(toFret - fromFret))
-		}
-	}
-
-	return totalMovement
 }

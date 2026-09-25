@@ -1,7 +1,15 @@
 package music
 
+import (
+	"fmt"
+	"strings"
+)
+
+// MaxTuningOffset is how far, in semitones, each string may be tuned from standard.
+const MaxTuningOffset = 5
+
 type Tuning struct {
-	Strings [6]Note
+	Strings [6]Note // high→low: Strings[0] is the high e
 }
 
 func StandardTuning() Tuning {
@@ -17,32 +25,25 @@ func StandardTuning() Tuning {
 	}
 }
 
-func CalculateNote(openNote Note, fret int) Note {
-	if fret == 0 {
-		return openNote
+// ParseTuning parses six comma-separated pitches, low to high ("E2,A2,D3,G3,B3,E4").
+// Each string must be within MaxTuningOffset semitones of standard.
+func ParseTuning(s string) (Tuning, error) {
+	parts := strings.Split(s, ",")
+	if len(parts) != 6 {
+		return Tuning{}, fmt.Errorf("want 6 pitches, got %d", len(parts))
 	}
-
-	startSemitone := openNote.SemitoneValue()
-
-	newSemitone := (startSemitone + fret) % 12
-
-	return semitoneToNote(newSemitone)
-}
-
-func semitoneToNote(semitone int) Note {
-	noteMap := map[int]Note{
-		0:  {Name: C, Accidental: Natural},
-		1:  {Name: C, Accidental: Sharp},
-		2:  {Name: D, Accidental: Natural},
-		3:  {Name: D, Accidental: Sharp},
-		4:  {Name: E, Accidental: Natural},
-		5:  {Name: F, Accidental: Natural},
-		6:  {Name: F, Accidental: Sharp},
-		7:  {Name: G, Accidental: Natural},
-		8:  {Name: G, Accidental: Sharp},
-		9:  {Name: A, Accidental: Natural},
-		10: {Name: A, Accidental: Sharp},
-		11: {Name: B, Accidental: Natural},
+	std := StandardTuning()
+	var t Tuning
+	for i, p := range parts {
+		n, err := ParsePitch(strings.TrimSpace(p))
+		if err != nil {
+			return Tuning{}, err
+		}
+		s := 5 - i
+		if d := n.MIDI() - std.Strings[s].MIDI(); d > MaxTuningOffset || d < -MaxTuningOffset {
+			return Tuning{}, fmt.Errorf("string %d (%s) is out of range: each string must be within ±%d semitones of standard", i+1, p, MaxTuningOffset)
+		}
+		t.Strings[s] = n
 	}
-	return noteMap[semitone]
+	return t, nil
 }

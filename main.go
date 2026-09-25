@@ -1,16 +1,21 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
 	"log"
-
-	"github.com/hajimehoshi/ebiten/v2"
+	"net/http"
 )
 
+//go:embed web
+var webFS embed.FS
+
 func main() {
-	ebiten.SetWindowSize(1600, 550)
-	ebiten.SetWindowTitle("Fretboard Visualizer")
-	app := NewFretboardApp()
-	if err := ebiten.RunGame(app); err != nil {
+	static, err := fs.Sub(webFS, "web")
+	if err != nil {
 		log.Fatal(err)
 	}
+	addr := "localhost:8080"
+	log.Printf("Fretboard Visualizer on http://%s", addr)
+	log.Fatal(http.ListenAndServe(addr, newMux(static)))
 }

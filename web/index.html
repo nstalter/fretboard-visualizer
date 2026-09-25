@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fretboard Visualizer</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Fretboard Visualizer</h1>
+    <p id="status" role="status"></p>
+  </header>
+
+  <main>
+    <section class="panel" id="tuning-panel" aria-labelledby="tuning-title">
+      <div class="panel-head">
+        <h2 id="tuning-title">Tuning</h2>
+        <label>Preset
+          <select id="preset"></select>
+        </label>
+      </div>
+      <div id="strings" class="strings"></div>
+    </section>
+
+    <section class="panel" id="explorer" aria-labelledby="chord-name">
+      <div class="controls">
+        <div class="segmented" role="group" aria-label="Choose chord by">
+          <button id="chooser-type" data-chooser="type">Key + type</button>
+          <button id="chooser-mode" data-chooser="mode">Key + mode</button>
+        </div>
+
+        <div id="type-pickers" class="pickers">
+          <label>Root <select id="root"></select></label>
+          <label>Quality <select id="quality"></select></label>
+        </div>
+
+        <div id="mode-pickers" class="pickers" hidden>
+          <label>Key <select id="key"></select></label>
+          <label>Mode <select id="mode"></select></label>
+          <label>Quality <select id="mode-quality"></select></label>
+        </div>
+
+        <label>Inversion <select id="inversion"></select></label>
+
+        <label title="A shape with an open string must stay at or below this fret. 22 turns the limit off.">Open strings up to fret
+          <input id="open-max" type="number" min="0" max="22" step="1">
+        </label>
+
+        <div class="segmented" role="group" aria-label="Dot labels">
+          <button id="label-notes" data-label="notes">Notes</button>
+          <button id="label-intervals" data-label="intervals">Intervals</button>
+        </div>
+
+        <button id="show-all" aria-pressed="false" title="Show every chord tone across the whole neck">All chord tones</button>
+      </div>
+
+      <div id="degrees" class="degrees" hidden></div>
+
+      <div class="chord-bar">
+        <h2 id="chord-name">…</h2>
+        <div class="nav">
+          <button id="prev-shape" aria-label="Previous shape">◀</button>
+          <span id="counter">0 / 0</span>
+          <button id="next-shape" aria-label="Next shape">▶</button>
+        </div>
+        <button id="add-step" class="primary">Add to progression</button>
+      </div>
+
+      <div class="board-scroll">
+        <svg id="fretboard" role="img" aria-label="Fretboard"></svg>
+      </div>
+    </section>
+
+    <section class="panel" id="progression" aria-labelledby="progression-title">
+      <div class="panel-head">
+        <h2 id="progression-title">Progression</h2>
+        <div class="playback">
+          <button id="play-prev" aria-label="Previous step">⏮</button>
+          <button id="play" class="primary">Play</button>
+          <button id="play-next" aria-label="Next step">⏭</button>
+          <label>BPM <input id="bpm" type="number" min="20" max="300" value="90"></label>
+          <label>Beats per chord <input id="beats" type="number" min="1" max="16" value="4"></label>
+        </div>
+      </div>
+      <ol id="steps" class="steps"></ol>
+      <p id="steps-empty" class="hint">No chords yet. Pick a chord and press “Add to progression”.</p>
+    </section>
+  </main>
+</body>
+</html>
