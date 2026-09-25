@@ -1,4 +1,4 @@
-package music
+package guitar
 
 import "testing"
 

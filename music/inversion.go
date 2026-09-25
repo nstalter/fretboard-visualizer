@@ -32,8 +32,8 @@ func (i Inversion) degree() int {
 	return [...]int{0, 1, 3, 5, 7}[i]
 }
 
-// allowsBass reports whether a tone of the given degree may be the lowest pitch.
+// AllowsBass reports whether a tone of the given degree may be the lowest pitch.
 // Any applies no filter.
-func (i Inversion) allowsBass(degree int) bool {
+func (i Inversion) AllowsBass(degree int) bool {
 	return i == AnyInversion || i.degree() == degree
 }

@@ -38,7 +38,8 @@ var noteLetters = [7]string{"C", "D", "E", "F", "G", "A", "B"}
 // naturalSemitones is the pitch class of each natural note, C..B.
 var naturalSemitones = [7]int{0, 2, 4, 5, 7, 9, 11}
 
-func mod12(n int) int { return ((n % 12) + 12) % 12 }
+// PitchClass reduces n to a pitch class, 0..11.
+func PitchClass(n int) int { return ((n % 12) + 12) % 12 }
 
 // ParseNote parses a note name without octave: "C", "Bb", "B♭", "F##", "Cb".
 func ParseNote(s string) (Note, error) {
@@ -114,7 +115,7 @@ func (n Note) String() string {
 
 // SemitoneValue returns the position in the chromatic scale (0-11)
 func (n Note) SemitoneValue() int {
-	return mod12(naturalSemitones[n.Name] + int(n.Accidental))
+	return PitchClass(naturalSemitones[n.Name] + int(n.Accidental))
 }
 
 // MIDI returns the MIDI pitch number: E2 = 40, B♯3 = 60, C♭4 = 59.

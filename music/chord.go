@@ -168,19 +168,19 @@ func (c Chord) Name() string {
 // Spell returns the note for a tone of this chord, spelled from its degree.
 func (c Chord) Spell(t Tone) Note {
 	letter := (int(c.Root.Name) + t.Degree - 1) % 7
-	acc := int(c.Root.Accidental) + mod12(t.Semitones) - mod12(naturalSemitones[letter]-naturalSemitones[c.Root.Name])
+	acc := int(c.Root.Accidental) + PitchClass(t.Semitones) - PitchClass(naturalSemitones[letter]-naturalSemitones[c.Root.Name])
 	return Note{Name: NoteName(letter), Accidental: Accidental(acc)}
 }
 
-// toneAt maps a pitch class to an index into Tones(), or -1.
-func (c Chord) toneAt() [12]int {
+// ToneAt maps a pitch class to an index into Tones(), or -1.
+func (c Chord) ToneAt() [12]int {
 	var at [12]int
 	for i := range at {
 		at[i] = -1
 	}
 	root := c.Root.SemitoneValue()
 	for i, t := range c.Quality.Tones() {
-		pc := mod12(root + t.Semitones)
+		pc := PitchClass(root + t.Semitones)
 		if at[pc] < 0 {
 			at[pc] = i
 		}
@@ -188,29 +188,15 @@ func (c Chord) toneAt() [12]int {
 	return at
 }
 
-// masks returns pitch-class bitmasks of all chord tones and of the required ones.
-func (c Chord) masks() (all, required uint16) {
+// Masks returns pitch-class bitmasks of all chord tones and of the required ones.
+func (c Chord) Masks() (all, required uint16) {
 	root := c.Root.SemitoneValue()
 	for _, t := range c.Quality.Tones() {
-		bit := uint16(1) << mod12(root+t.Semitones)
+		bit := uint16(1) << PitchClass(root+t.Semitones)
 		all |= bit
 		if !t.Optional {
 			required |= bit
 		}
 	}
 	return all, required
-}
-
-// FretboardTones maps every string (high→low) and fret 0..MaxFret to the index into
-// Quality.Tones() of the note sounded there, or -1 when it is not a chord tone.
-func (c Chord) FretboardTones(t Tuning) [6][MaxFret + 1]int {
-	at := c.toneAt()
-	var m [6][MaxFret + 1]int
-	for s := range m {
-		open := t.Strings[s].SemitoneValue()
-		for fret := range m[s] {
-			m[s][fret] = at[mod12(open+fret)]
-		}
-	}
-	return m
 }

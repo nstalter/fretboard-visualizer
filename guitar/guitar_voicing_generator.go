@@ -1,7 +1,8 @@
-package music
+package guitar
 
 import (
 	"cmp"
+	"github.com/nstalter/fretboard-visualizer/music"
 	"slices"
 )
 
@@ -28,9 +29,9 @@ func NewGuitarVoicingGenerator(tuning Tuning, maxFret int) *GuitarVoicingGenerat
 
 // GenerateVoicings returns every playable voicing of the chord whose lowest pitch
 // satisfies the inversion, sorted by fret (D7).
-func (g *GuitarVoicingGenerator) GenerateVoicings(chord Chord, inv Inversion) []GuitarChordVoicing {
-	all, required := chord.masks()
-	at := chord.toneAt()
+func (g *GuitarVoicingGenerator) GenerateVoicings(chord music.Chord, inv music.Inversion) []GuitarChordVoicing {
+	all, required := chord.Masks()
+	at := chord.ToneAt()
 	tones := chord.Quality.Tones()
 
 	// Candidates per string: muted, or any fret whose pitch class is a chord tone.
@@ -39,7 +40,7 @@ func (g *GuitarVoicingGenerator) GenerateVoicings(chord Chord, inv Inversion) []
 		candidates[s] = []int{-1}
 		open := g.tuning.Strings[s].SemitoneValue()
 		for fret := 0; fret <= g.maxFret; fret++ {
-			if all&(1<<mod12(open+fret)) != 0 {
+			if all&(1<<music.PitchClass(open+fret)) != 0 {
 				candidates[s] = append(candidates[s], fret)
 			}
 		}
@@ -58,8 +59,8 @@ func (g *GuitarVoicingGenerator) GenerateVoicings(chord Chord, inv Inversion) []
 			if !v.IsPlayable() || opensPastFret(v.Fingering, g.MaxOpenFret) {
 				return
 			}
-			bass := at[mod12(v.BassPitch(g.tuning))]
-			if !inv.allowsBass(tones[bass].Degree) {
+			bass := at[music.PitchClass(v.BassPitch(g.tuning))]
+			if !inv.AllowsBass(tones[bass].Degree) {
 				return
 			}
 			voicings = append(voicings, v)
@@ -72,13 +73,13 @@ func (g *GuitarVoicingGenerator) GenerateVoicings(chord Chord, inv Inversion) []
 			case fret < 0:
 				walk(s+1, present, lo, hi)
 			case fret == 0:
-				walk(s+1, present|1<<mod12(open), lo, hi)
+				walk(s+1, present|1<<music.PitchClass(open), lo, hi)
 			default:
 				nlo, nhi := min(lo, fret), max(hi, fret)
 				if nhi-nlo > 3 { // same limit as IsPlayable's fret span
 					continue
 				}
-				walk(s+1, present|1<<mod12(open+fret), nlo, nhi)
+				walk(s+1, present|1<<music.PitchClass(open+fret), nlo, nhi)
 			}
 		}
 	}

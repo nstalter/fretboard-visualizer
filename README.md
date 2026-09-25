@@ -37,7 +37,8 @@ go vet ./... && go test ./...
 
 ## Layout
 
-- `music/`: chord spelling, voicing generation, playability, nearest voicing and diatonic chords (standard library only)
+- `music/`: instrument-independent theory: notes, chord spelling, inversions and diatonic chords (standard library only)
+- `guitar/`: tunings, fingerings, voicing generation, playability and nearest voicing; depends on `music/`
 - `api.go`: the stateless JSON API (`/api/qualities`, `/api/voicings`, `/api/diatonic`, `/api/progression`)
 - `web/`: plain HTML, CSS and ES modules, with the fretboard drawn in SVG
 - `docs/code-tour.html`: a guided tour of the code and the Go idioms it uses (open it in a browser)

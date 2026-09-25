@@ -60,8 +60,8 @@ func DiatonicChords(key Note, mode Mode) [7]DiatonicChord {
 	tonic := Chord{Root: key}
 	var chords [7]DiatonicChord
 	for i := range chords {
-		third := mod12(off[(i+2)%7] - off[i])
-		fifth := mod12(off[(i+4)%7] - off[i])
+		third := PitchClass(off[(i+2)%7] - off[i])
+		fifth := PitchClass(off[(i+4)%7] - off[i])
 		q := triadQualities[[2]int{third, fifth}]
 
 		numeral := romanNumerals[i]

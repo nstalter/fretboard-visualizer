@@ -1,9 +1,11 @@
-package music
+package guitar
+
+import "github.com/nstalter/fretboard-visualizer/music"
 
 type GuitarChordVoicing struct {
-	Chord     Chord  // The specific chord this voicing represents
-	Fingering [6]int // -1 for muted, 0 for open, >0 for fret number
-	Barre     *Barre // Absolute barre information
+	Chord     music.Chord // The specific chord this voicing represents
+	Fingering [6]int      // -1 for muted, 0 for open, >0 for fret number
+	Barre     *Barre      // Absolute barre information
 }
 
 // Fingering follows standard guitar string order:
@@ -48,7 +50,7 @@ func (v *GuitarChordVoicing) GetMinFret() int {
 // MatchesChord reports whether every played pitch class is a chord tone and every
 // required tone is present.
 func (v *GuitarChordVoicing) MatchesChord(tuning Tuning) bool {
-	all, required := v.Chord.masks()
+	all, required := v.Chord.Masks()
 	present := v.pitchClassMask(tuning)
 	return present&^all == 0 && present&required == required
 }
@@ -57,7 +59,7 @@ func (v *GuitarChordVoicing) pitchClassMask(tuning Tuning) uint16 {
 	var present uint16
 	for s, fret := range v.Fingering {
 		if fret >= 0 {
-			present |= 1 << mod12(tuning.Strings[s].SemitoneValue()+fret)
+			present |= 1 << music.PitchClass(tuning.Strings[s].SemitoneValue()+fret)
 		}
 	}
 	return present
@@ -76,15 +78,15 @@ func (v *GuitarChordVoicing) BassPitch(tuning Tuning) int {
 	return bass
 }
 
-// ToneIndices returns, per string (high→low), the index into Chord.Quality.Tones()
+// ToneIndices returns, per string (high→low), the index into music.Chord.Quality.Tones()
 // of the note played, or -1 for a muted string or a non-chord tone.
 func (v *GuitarChordVoicing) ToneIndices(tuning Tuning) [6]int {
-	at := v.Chord.toneAt()
+	at := v.Chord.ToneAt()
 	var idx [6]int
 	for s, fret := range v.Fingering {
 		idx[s] = -1
 		if fret >= 0 {
-			idx[s] = at[mod12(tuning.Strings[s].SemitoneValue()+fret)]
+			idx[s] = at[music.PitchClass(tuning.Strings[s].SemitoneValue()+fret)]
 		}
 	}
 	return idx

@@ -1,7 +1,8 @@
-package music
+package guitar
 
 import (
 	"fmt"
+	"github.com/nstalter/fretboard-visualizer/music"
 	"strings"
 )
 
@@ -9,18 +10,18 @@ import (
 const MaxTuningOffset = 5
 
 type Tuning struct {
-	Strings [6]Note // high→low: Strings[0] is the high e
+	Strings [6]music.Note // high→low: Strings[0] is the high e
 }
 
 func StandardTuning() Tuning {
 	return Tuning{
-		Strings: [6]Note{
-			{Name: E, Accidental: Natural, Octave: 4}, // high e
-			{Name: B, Accidental: Natural, Octave: 3},
-			{Name: G, Accidental: Natural, Octave: 3},
-			{Name: D, Accidental: Natural, Octave: 3},
-			{Name: A, Accidental: Natural, Octave: 2},
-			{Name: E, Accidental: Natural, Octave: 2}, // low E
+		Strings: [6]music.Note{
+			{Name: music.E, Accidental: music.Natural, Octave: 4}, // high e
+			{Name: music.B, Accidental: music.Natural, Octave: 3},
+			{Name: music.G, Accidental: music.Natural, Octave: 3},
+			{Name: music.D, Accidental: music.Natural, Octave: 3},
+			{Name: music.A, Accidental: music.Natural, Octave: 2},
+			{Name: music.E, Accidental: music.Natural, Octave: 2}, // low E
 		},
 	}
 }
@@ -35,7 +36,7 @@ func ParseTuning(s string) (Tuning, error) {
 	std := StandardTuning()
 	var t Tuning
 	for i, p := range parts {
-		n, err := ParsePitch(strings.TrimSpace(p))
+		n, err := music.ParsePitch(strings.TrimSpace(p))
 		if err != nil {
 			return Tuning{}, err
 		}

@@ -64,7 +64,6 @@ func TestDiatonic_Spelling(t *testing.T) {
 
 func TestDiatonic_RoundTrip(t *testing.T) {
 	keys := []string{"C", "C♯", "D♭", "D", "D♯", "E♭", "E", "F", "F♯", "G♭", "G", "G♯", "A♭", "A", "A♯", "B♭", "B"}
-	g := NewGuitarVoicingGenerator(StandardTuning(), MaxFret)
 	for _, k := range keys {
 		for m := Ionian; m <= Locrian; m++ {
 			for _, dc := range DiatonicChords(mustNote(t, k), m) {
@@ -72,9 +71,6 @@ func TestDiatonic_RoundTrip(t *testing.T) {
 				if err != nil || n != dc.Root {
 					t.Errorf("%s %s: root %s does not round-trip: %v", k, m, dc.Root, err)
 					continue
-				}
-				if len(g.GenerateVoicings(Chord{Root: n, Quality: dc.Quality}, AnyInversion)) == 0 {
-					t.Errorf("%s %s: %s has no voicings", k, m, dc.Root)
 				}
 			}
 		}

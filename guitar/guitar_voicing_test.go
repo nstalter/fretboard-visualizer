@@ -1,6 +1,7 @@
-package music
+package guitar
 
 import (
+	"github.com/nstalter/fretboard-visualizer/music"
 	"testing"
 )
 
@@ -136,22 +137,22 @@ func TestGuitarChordVoicing_IsPlayable(t *testing.T) {
 func TestMatchesChord(t *testing.T) {
 	cases := []struct {
 		root      string
-		q         ChordQuality
+		q         music.ChordQuality
 		fingering string
 		tuning    string
 		want      bool
 	}{
-		{"C", Major, "x32010", stdTuning, true},
-		{"C", Major, "335xxx", stdTuning, false}, // no 3rd
-		{"C", Major, "x32000", stdTuning, false}, // B is not in the chord
-		{"C", Dominant7, "x32310", stdTuning, true},
-		{"C", Dominant9, "x30310", stdTuning, true},
-		{"C", Dominant9, "355553", stdTuning, false}, // no ♭7
-		{"C", Dominant11, "x33311", stdTuning, true},
-		{"C", Minor11, "x33311", stdTuning, false}, // no ♭3
-		{"C", HalfDiminished7, "x3434x", stdTuning, true},
-		{"D", Major, "000232", dropDTuning, true},
-		{"D", Major, "000232", stdTuning, false},
+		{"C", music.Major, "x32010", stdTuning, true},
+		{"C", music.Major, "335xxx", stdTuning, false}, // no 3rd
+		{"C", music.Major, "x32000", stdTuning, false}, // B is not in the chord
+		{"C", music.Dominant7, "x32310", stdTuning, true},
+		{"C", music.Dominant9, "x30310", stdTuning, true},
+		{"C", music.Dominant9, "355553", stdTuning, false}, // no ♭7
+		{"C", music.Dominant11, "x33311", stdTuning, true},
+		{"C", music.Minor11, "x33311", stdTuning, false}, // no ♭3
+		{"C", music.HalfDiminished7, "x3434x", stdTuning, true},
+		{"D", music.Major, "000232", dropDTuning, true},
+		{"D", music.Major, "000232", stdTuning, false},
 	}
 	for _, c := range cases {
 		v := GuitarChordVoicing{Chord: chordOf(t, c.root, c.q), Fingering: mustFingering(t, c.fingering)}
@@ -163,12 +164,12 @@ func TestMatchesChord(t *testing.T) {
 
 func TestBassPitch_CrossedStrings(t *testing.T) {
 	tuning := mustTuning(t, "A2,E2,D3,G3,B3,E4")
-	v := GuitarChordVoicing{Chord: chordOf(t, "A", Minor), Fingering: mustFingering(t, "002210")}
+	v := GuitarChordVoicing{Chord: chordOf(t, "A", music.Minor), Fingering: mustFingering(t, "002210")}
 	bass := v.BassPitch(tuning)
 	if bass != 40 { // E2, on the second-lowest string
 		t.Fatalf("BassPitch = %d, want 40 (E2)", bass)
 	}
-	if tone := v.Chord.Quality.Tones()[v.Chord.toneAt()[mod12(bass)]]; tone.Degree != 5 {
+	if tone := v.Chord.Quality.Tones()[v.Chord.ToneAt()[music.PitchClass(bass)]]; tone.Degree != 5 {
 		t.Errorf("bass degree = %d, want 5", tone.Degree)
 	}
 }
@@ -215,7 +216,7 @@ func TestNearestIndex_TieBreaks(t *testing.T) {
 }
 
 func TestNearestIndexAt(t *testing.T) {
-	vs := generate(t, stdTuning, "C", Major, AnyInversion)
+	vs := generate(t, stdTuning, "C", music.Major, music.AnyInversion)
 	cur := mustFingering(t, "x32010")
 	c := GuitarChordVoicing{Fingering: cur}
 	avgDist := func(v GuitarChordVoicing, fret int) float64 {
@@ -271,7 +272,7 @@ func TestNearestIndexAt(t *testing.T) {
 // Clicking a non-chord tone inside the current shape's range keeps that shape, rather than
 // swapping it for a thinner fragment that happens to sit nearer on average.
 func TestNearestIndexAt_ClickInsideCurrentShapeKeepsIt(t *testing.T) {
-	vs := generate(t, stdTuning, "C", Major, AnyInversion)
+	vs := generate(t, stdTuning, "C", music.Major, music.AnyInversion)
 	cur := mustFingering(t, "x32010")
 	// D string (internal 3) fret 1 = D♯, not in C. x32010 spans frets 0–3.
 	i, matched := NearestIndexAt(vs, &cur, 3, 1)

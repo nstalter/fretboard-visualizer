@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nstalter/fretboard-visualizer/guitar"
 	"github.com/nstalter/fretboard-visualizer/music"
 )
 
@@ -72,13 +73,13 @@ func parseChordParams(root, quality, inversion string) (music.Chord, music.Inver
 	return music.Chord{Root: r, Quality: q}, inv, nil
 }
 
-func parseTuningParam(s string) (music.Tuning, error) {
+func parseTuningParam(s string) (guitar.Tuning, error) {
 	if s == "" {
-		return music.Tuning{}, paramError("tuning", errRequired)
+		return guitar.Tuning{}, paramError("tuning", errRequired)
 	}
-	t, err := music.ParseTuning(s)
+	t, err := guitar.ParseTuning(s)
 	if err != nil {
-		return music.Tuning{}, paramError("tuning", err)
+		return guitar.Tuning{}, paramError("tuning", err)
 	}
 	return t, nil
 }
@@ -93,20 +94,20 @@ func parseInt(s string, lo, hi int) (int, error) {
 }
 
 // parseOpenMax validates the highest fret at which a shape may still use an open string.
-// Empty means the default; music.MaxFret means no limit.
+// Empty means the default; guitar.MaxFret means no limit.
 func parseOpenMax(s string) (int, error) {
 	if s == "" {
-		return music.DefaultMaxOpenFret, nil
+		return guitar.DefaultMaxOpenFret, nil
 	}
-	n, err := parseInt(s, 0, music.MaxFret)
+	n, err := parseInt(s, 0, guitar.MaxFret)
 	if err != nil {
 		return 0, paramError("openMax", err)
 	}
 	return n, nil
 }
 
-func generate(t music.Tuning, c music.Chord, inv music.Inversion, openMax int) []music.GuitarChordVoicing {
-	g := music.NewGuitarVoicingGenerator(t, music.MaxFret)
+func generate(t guitar.Tuning, c music.Chord, inv music.Inversion, openMax int) []guitar.GuitarChordVoicing {
+	g := guitar.NewGuitarVoicingGenerator(t, guitar.MaxFret)
 	g.MaxOpenFret = openMax
 	return g.GenerateVoicings(c, inv)
 }
@@ -158,10 +159,10 @@ type voicingsResponse struct {
 	Chord chordJSON `json:"chord"`
 	// Fretboard[string][fret] indexes Chord.Tones for every string (low→high) and fret
 	// 0–22, or is -1 for a note that is not in the chord. It does not depend on the voicings.
-	Fretboard    [6][music.MaxFret + 1]int `json:"fretboard"`
-	Voicings     []voicingJSON             `json:"voicings"`
-	NearestIndex *int                      `json:"nearestIndex,omitempty"`
-	AtMatched    *bool                     `json:"atMatched,omitempty"`
+	Fretboard    [6][guitar.MaxFret + 1]int `json:"fretboard"`
+	Voicings     []voicingJSON              `json:"voicings"`
+	NearestIndex *int                       `json:"nearestIndex,omitempty"`
+	AtMatched    *bool                      `json:"atMatched,omitempty"`
 }
 
 // parseAt parses a clicked spot "S:F": S is the string index low→high (0–5, the same
@@ -169,9 +170,9 @@ type voicingsResponse struct {
 func parseAt(s string) (str, fret int, err error) {
 	ss, fs, ok := strings.Cut(s, ":")
 	str, err1 := parseInt(ss, 0, 5)
-	fret, err2 := parseInt(fs, 0, music.MaxFret)
+	fret, err2 := parseInt(fs, 0, guitar.MaxFret)
 	if !ok || err1 != nil || err2 != nil {
-		return 0, 0, fmt.Errorf("want string:fret with string 0–5 and fret 0–%d, got %q", music.MaxFret, s)
+		return 0, 0, fmt.Errorf("want string:fret with string 0–5 and fret 0–%d, got %q", guitar.MaxFret, s)
 	}
 	return 5 - str, fret, nil
 }
@@ -185,8 +186,8 @@ func newChordJSON(c music.Chord) chordJSON {
 }
 
 // newVoicingJSON converts the internal high→low order to the API's low→high order.
-func newVoicingJSON(v music.GuitarChordVoicing, t music.Tuning) voicingJSON {
-	vj := voicingJSON{Fingering: music.FormatFingering(v.Fingering)}
+func newVoicingJSON(v guitar.GuitarChordVoicing, t guitar.Tuning) voicingJSON {
+	vj := voicingJSON{Fingering: guitar.FormatFingering(v.Fingering)}
 	tones := v.ToneIndices(t)
 	for i := range 6 {
 		vj.Frets[i] = v.Fingering[5-i]
@@ -212,7 +213,7 @@ func handleVoicings(w http.ResponseWriter, r *http.Request) {
 	}
 	var near *[6]int
 	if s := q.Get("near"); s != "" {
-		f, err := music.ParseFingering(s)
+		f, err := guitar.ParseFingering(s)
 		if err != nil {
 			writeError(w, paramError("near", err))
 			return
@@ -236,7 +237,7 @@ func handleVoicings(w http.ResponseWriter, r *http.Request) {
 
 	vs := generate(tuning, chord, inv, openMax)
 	resp := voicingsResponse{Chord: newChordJSON(chord), Voicings: []voicingJSON{}}
-	high2low := chord.FretboardTones(tuning)
+	high2low := guitar.FretboardTones(chord, tuning)
 	for s := range resp.Fretboard {
 		resp.Fretboard[s] = high2low[5-s]
 	}
@@ -246,10 +247,10 @@ func handleVoicings(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case len(vs) == 0:
 	case at != nil:
-		i, matched := music.NearestIndexAt(vs, near, at[0], at[1])
+		i, matched := guitar.NearestIndexAt(vs, near, at[0], at[1])
 		resp.NearestIndex, resp.AtMatched = &i, &matched
 	case near != nil:
-		i := music.NearestIndex(vs, *near)
+		i := guitar.NearestIndex(vs, *near)
 		resp.NearestIndex = &i
 	}
 	writeJSON(w, resp)
@@ -314,11 +315,11 @@ func handleProgression(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	openMax := music.DefaultMaxOpenFret
+	openMax := guitar.DefaultMaxOpenFret
 	if req.OpenMax != nil {
 		openMax = *req.OpenMax
-		if openMax < 0 || openMax > music.MaxFret {
-			writeError(w, paramError("openMax", fmt.Errorf("want an integer from 0 to %d, got %d", music.MaxFret, openMax)))
+		if openMax < 0 || openMax > guitar.MaxFret {
+			writeError(w, paramError("openMax", fmt.Errorf("want an integer from 0 to %d, got %d", guitar.MaxFret, openMax)))
 			return
 		}
 	}
@@ -346,11 +347,11 @@ func handleProgression(w http.ResponseWriter, r *http.Request) {
 		}
 		i := 0
 		if prev != nil {
-			i = music.NearestIndex(vs, *prev)
+			i = guitar.NearestIndex(vs, *prev)
 		}
 		f := vs[i].Fingering
 		prev = &f
-		shape := music.FormatFingering(f)
+		shape := guitar.FormatFingering(f)
 		shapes = append(shapes, &shape)
 	}
 	writeJSON(w, map[string]any{"shapes": shapes})
