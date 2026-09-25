@@ -286,7 +286,7 @@ func DiatonicChords(key Note, mode Mode) [7]DiatonicChord
 
 | File | Responsibility |
 |---|---|
-| `index.html` | Layout: the tuning panel; the explorer (a Key + type / Key + mode toggle and its pickers, inversion, a Notes/Intervals toggle, prev/next with an "i / n" counter, the chord name, the `<svg>`, and "Add to progression"); then the progression (step list and playback controls). Root and key pickers offer 17 spellings: C C♯ D♭ D D♯ E♭ E F F♯ G♭ G G♯ A♭ A A♯ B♭ B. |
+| `index.html` | Layout: the explorer (a Key + mode / Key + type toggle and its pickers, inversion, the tuning preset dropdown, a Notes/Intervals toggle, prev/next with an "i / n" counter, the chord name, the `<svg>` with a ▼/▲ pair beside each string name for tuning, and "Add to progression"); then the progression (step list and playback controls). Root and key pickers offer 17 spellings: C C♯ D♭ D D♯ E♭ E F F♯ G♭ G G♯ A♭ A A♯ B♭ B. |
 | `style.css` | CSS custom properties for colours (`--root`, `--tone`, `--barre`, `--string`, `--fret`, `--inlay`), and a horizontal scroll container around the SVG. |
 | `js/api.js` | One `fetch` wrapper per endpoint, using `URLSearchParams`. A non-2xx response throws `Error(body.error)`. |
 | `js/fretboard.js` | `renderFretboard(svg, {stringNames, voicing, chordTones, labelMode})`. Pure: it rebuilds the SVG's children and holds no state. |

@@ -33,3 +33,6 @@ go.work.sum
 
 # Built binary
 /fretboard-visualizer
+
+# macOS
+.DS_Store

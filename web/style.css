@@ -82,18 +82,6 @@ button.primary:hover:not(:disabled) { background: #f0bb55; }
 input[type="number"] { width: 64px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* Tuning */
-.strings { display: flex; gap: 10px; flex-wrap: wrap; }
-.string-ctl {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 44px;
-}
-.string-ctl span { font-weight: 600; font-size: 17px; }
-.string-ctl button { padding: 0 10px; font-size: 11px; line-height: 20px; }
-
 /* Explorer */
 .controls, .pickers { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .segmented { display: inline-flex; }
@@ -127,6 +115,11 @@ input[type="number"] { width: 64px; }
 #fretboard text { dominant-baseline: central; text-anchor: middle; }
 #fretboard .fret-num { fill: var(--muted); font-size: 11px; }
 #fretboard .string-name { fill: var(--text); font-size: 14px; font-weight: 600; }
+#fretboard .tune rect { fill: transparent; }
+#fretboard .tune text { fill: var(--muted); font-size: 11px; }
+#fretboard .tune:not(.off) { cursor: pointer; }
+#fretboard .tune:not(.off):hover text, #fretboard .tune:focus-visible text { fill: var(--accent); }
+#fretboard .tune.off text { opacity: 0.3; }
 #fretboard .empty { fill: var(--text); font-size: 16px; paint-order: stroke; stroke: var(--board); stroke-width: 6px; }
 #fretboard .muted { fill: var(--mute); font-size: 20px; font-weight: 700; }
 #fretboard .barre { fill: var(--barre); opacity: 0.55; }

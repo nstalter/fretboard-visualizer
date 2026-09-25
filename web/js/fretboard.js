@@ -3,7 +3,9 @@
 
 const NS = 'http://www.w3.org/2000/svg';
 const FRETS = 22;
-const NUT_X = 64;
+const NUT_X = 128;
+const OPEN_X = NUT_X - 24;      // centre of the open-string marker, just left of the nut
+const OPEN_LEFT = NUT_X - 38;   // left edge of its click target
 const FRET_W = 52;
 const STRING_GAP = 34;
 const TOP = 44;
@@ -26,7 +28,9 @@ function el(name, attrs = {}, text) {
 // from the server; every chord tone on the neck is then drawn faintly under the voicing.
 // spotName(string, fret) is the note name shown while a spot is hovered (string low→high).
 // onPick(string, fret), if given, is called when a spot is clicked (fret 0 = open).
-export function renderFretboard(svg, { stringNames, voicing, chordTones, labelMode, allTones, spotName, onPick }) {
+// onTune(string, delta), if given, is called by the ▼ ▲ arrows beside each string name; canTune(string, delta)
+// says whether an arrow is enabled.
+export function renderFretboard(svg, { stringNames, voicing, chordTones, labelMode, allTones, spotName, onPick, onTune, canTune }) {
   svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
   svg.replaceChildren();
 
@@ -51,7 +55,8 @@ export function renderFretboard(svg, { stringNames, voicing, chordTones, labelMo
   // Strings, thicker toward the low string, with names from the current tuning
   for (let s = 0; s < 6; s++) {
     svg.append(el('line', { class: 'string', x1: NUT_X, y1: y(s), x2: NUT_X + FRETS * FRET_W, y2: y(s), 'stroke-width': 1 + (5 - s) * 0.35 }));
-    svg.append(el('text', { class: 'string-name', x: 12, y: y(s) }, stringNames[s]));
+    svg.append(el('text', { class: 'string-name', x: 32, y: y(s) }, stringNames[s]));
+    if (onTune) appendTuneArrows(svg, s, stringNames[s], onTune, canTune);
   }
 
   if (allTones) appendAllTones(svg, allTones, voicing, chordTones, labelMode);
@@ -78,11 +83,11 @@ export function renderFretboard(svg, { stringNames, voicing, chordTones, labelMo
     const fret = voicing.frets[s];
     const isRoot = voicing.tones[s] === 0;
     if (fret < 0) {
-      svg.append(el('text', { class: 'muted', x: 40, y: y(s) }, '×'));
+      svg.append(el('text', { class: 'muted', x: OPEN_X, y: y(s) }, '×'));
     } else if (fret === 0) {
       const g = el('g', { class: isRoot ? 'open root' : 'open' });
-      g.append(el('circle', { cx: 40, cy: y(s), r: 11 }));
-      g.append(el('text', { x: 40, y: y(s) }, label(s)));
+      g.append(el('circle', { cx: OPEN_X, cy: y(s), r: 11 }));
+      g.append(el('text', { x: OPEN_X, y: y(s) }, label(s)));
       svg.append(g);
     } else {
       const g = el('g', { class: isRoot ? 'dot root' : 'dot' });
@@ -95,6 +100,25 @@ export function renderFretboard(svg, { stringNames, voicing, chordTones, labelMo
   if (onPick) appendHitTargets(svg, stringNames, spotName, onPick);
 }
 
+// appendTuneArrows adds the ▼ and ▲ either side of a string's name. They are keyboard-operable
+// like buttons; a disabled arrow is dimmed and ignores clicks.
+function appendTuneArrows(svg, s, name, onTune, canTune) {
+  for (const [delta, cx, glyph, word] of [[-1, 11, '▼', 'down'], [1, 53, '▲', 'up']]) {
+    const enabled = !canTune || canTune(s, delta);
+    const g = el('g', { class: enabled ? 'tune' : 'tune off', role: 'button', 'aria-label': `Tune string ${6 - s} (${name}) ${word}`, 'aria-disabled': String(!enabled) });
+    g.append(el('rect', { x: cx - 10, y: y(s) - STRING_GAP / 2, width: 20, height: STRING_GAP }));
+    g.append(el('text', { x: cx, y: y(s) }, glyph));
+    if (enabled) {
+      g.setAttribute('tabindex', '0');
+      g.addEventListener('click', () => onTune(s, delta));
+      g.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onTune(s, delta); }
+      });
+    }
+    svg.append(g);
+  }
+}
+
 // appendAllTones draws a faint dot on every chord tone except where the voicing draws its own.
 // At the nut the voicing's × or ○ occupies the spot, so a ring is drawn under a × without a label.
 function appendAllTones(svg, allTones, voicing, chordTones, labelMode) {
@@ -103,7 +127,7 @@ function appendAllTones(svg, allTones, voicing, chordTones, labelMode) {
       const tone = allTones[s][f];
       if (tone < 0 || voicing?.frets[s] === f) continue;
       const nut = f === 0;
-      const cx = nut ? 40 : fretX(f);
+      const cx = nut ? OPEN_X : fretX(f);
       const g = el('g', { class: `all-tone${nut ? ' nut' : ''}${tone === 0 ? ' root' : ''}` });
       g.append(el('circle', { cx, cy: y(s), r: nut ? 11 : DOT_R - 2 }));
       if (!(nut && voicing?.frets[s] < 0)) {
@@ -121,9 +145,9 @@ function appendHitTargets(svg, stringNames, spotName, onPick) {
   for (let s = 0; s < 6; s++) {
     for (let f = 0; f <= FRETS; f++) {
       const nut = f === 0;
-      const cx = nut ? 40 : fretX(f);
-      const x = nut ? 26 : NUT_X + (f - 1) * FRET_W;
-      const w = nut ? NUT_X - 5 - 26 : FRET_W;
+      const cx = nut ? OPEN_X : fretX(f);
+      const x = nut ? OPEN_LEFT : NUT_X + (f - 1) * FRET_W;
+      const w = nut ? NUT_X - 5 - OPEN_LEFT : FRET_W;
       const name = spotName(s, f);
       const g = el('g', { class: 'hit' });
       g.append(el('title', {}, `${stringNames[s]} string, ${nut ? 'open' : `fret ${f}`}: ${name}`));

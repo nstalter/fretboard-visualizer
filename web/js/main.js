@@ -11,7 +11,7 @@ const state = {
   qualities: [], tuning: [...STANDARD], labelMode: 'notes',
   openMax: 5,                          // highest fret at which a shape may still use an open string; 22 = no limit
   showAll: false,                      // draw every chord tone on the neck
-  explorer: { chooser: 'type', root: 'C', quality: 'maj',
+  explorer: { chooser: 'mode', root: 'C', quality: 'maj',
               key: 'C', mode: 'ionian', degree: 1, modeQuality: 'diatonic', diatonic: [],
               inversion: 'any', chord: null, fretboard: null, voicings: [], index: 0,
               lastFingering: null },   // reference for `near`; null after an empty result, so the next change shows index 0
@@ -259,38 +259,13 @@ function deleteStep(step) {
 
 // ---- rendering ----
 
-function renderTuning() {
-  const box = $('strings');
-  box.replaceChildren();
-  // Show the high string first so the panel reads top-down like the fretboard.
-  for (let i = 5; i >= 0; i--) {
-    const div = document.createElement('div');
-    div.className = 'string-ctl';
-    const up = document.createElement('button');
-    up.textContent = '▲';
-    up.setAttribute('aria-label', `Tune string ${6 - i} up`);
-    up.disabled = !canStep(state.tuning, i, 1);
-    up.addEventListener('click', () => onTuningChange(state.tuning.map((m, k) => (k === i ? m + 1 : m))));
-    const name = document.createElement('span');
-    name.textContent = noteName(state.tuning[i]);
-    const down = document.createElement('button');
-    down.textContent = '▼';
-    down.setAttribute('aria-label', `Tune string ${6 - i} down`);
-    down.disabled = !canStep(state.tuning, i, -1);
-    down.addEventListener('click', () => onTuningChange(state.tuning.map((m, k) => (k === i ? m - 1 : m))));
-    div.append(up, name, down);
-    box.append(div);
-  }
-  $('preset').value = presetName(state.tuning);
-}
-
 function renderPlayButton() {
   $('play').textContent = player.playing ? 'Pause' : 'Play';
 }
 
 function render() {
   const e = state.explorer;
-  renderTuning();
+  $('preset').value = presetName(state.tuning);
 
   $('chooser-type').classList.toggle('on', e.chooser === 'type');
   $('chooser-mode').classList.toggle('on', e.chooser === 'mode');
@@ -339,6 +314,8 @@ function render() {
     allTones: state.showAll ? e.fretboard : null,
     spotName,
     onPick: pickSpot,
+    onTune: (s, delta) => onTuningChange(state.tuning.map((m, k) => (k === s ? m + delta : m))),
+    canTune: (s, delta) => canStep(state.tuning, s, delta),
   });
 
   renderSteps($('steps'), state.steps, state.selectedStep, {
@@ -433,6 +410,7 @@ async function start() {
   }
   wire();
   render();
+  await loadDiatonic();
   await loadVoicings({ near: null });
 }
 

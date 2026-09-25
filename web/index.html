@@ -14,21 +14,11 @@
   </header>
 
   <main>
-    <section class="panel" id="tuning-panel" aria-labelledby="tuning-title">
-      <div class="panel-head">
-        <h2 id="tuning-title">Tuning</h2>
-        <label>Preset
-          <select id="preset"></select>
-        </label>
-      </div>
-      <div id="strings" class="strings"></div>
-    </section>
-
     <section class="panel" id="explorer" aria-labelledby="chord-name">
       <div class="controls">
         <div class="segmented" role="group" aria-label="Choose chord by">
-          <button id="chooser-type" data-chooser="type">Key + type</button>
           <button id="chooser-mode" data-chooser="mode">Key + mode</button>
+          <button id="chooser-type" data-chooser="type">Key + type</button>
         </div>
 
         <div id="type-pickers" class="pickers">
@@ -43,6 +33,8 @@
         </div>
 
         <label>Inversion <select id="inversion"></select></label>
+
+        <label title="Pick a preset, or use the arrows beside each string name on the fretboard">Tuning <select id="preset"></select></label>
 
         <label title="A shape with an open string must stay at or below this fret. 22 turns the limit off.">Open strings up to fret
           <input id="open-max" type="number" min="0" max="22" step="1">
