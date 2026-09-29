@@ -4,7 +4,7 @@ A web app that shows a guitar fretboard and visualizes chord shapes in any key, 
 
 The app generates playable chord positions by rule (fret span, finger count, muting). Not every generated shape will feel comfortable in practice.
 
-**Try it live:** <https://macmini.tail9292f9.ts.net/> (served from a Mac mini over a Tailscale tunnel, so it is only up while that machine is running)
+**Try it live:** <https://fretboard.tail9292f9.ts.net/> (served from EC2 over a Tailscale tunnel)
 
 ## Features
 
