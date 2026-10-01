@@ -172,8 +172,8 @@ func hasOnlyLowStringsMuted(fingering [6]int) bool {
 	lowestPlayedIndex := lowestPlayedStringIndex(fingering)
 	for stringIdx, fret := range fingering {
 		if fret == -1 { // Muted
-			if stringIdx < lowestPlayedIndex {
-				// This muted string is above the lowest played string
+			// The high E may be muted; any other muted string above the lowest played string may not
+			if stringIdx > 0 && stringIdx < lowestPlayedIndex {
 				return false
 			}
 		}

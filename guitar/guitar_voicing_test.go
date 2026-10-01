@@ -48,6 +48,13 @@ func TestGuitarChordVoicing_IsPlayable(t *testing.T) {
 			expected: true,
 		},
 		{
+			name: "Muted high and low strings (C7 x32310 shape with high E muted)",
+			voicing: GuitarChordVoicing{
+				Fingering: [6]int{-1, 1, 3, 2, 3, -1}, // x-3-2-3-1-x low→high
+			},
+			expected: true,
+		},
+		{
 			name: "Bad mute pattern (muted string between played strings)",
 			voicing: GuitarChordVoicing{
 				Fingering: [6]int{0, -1, 0, 3, 3, -1}, // B string muted between played strings
