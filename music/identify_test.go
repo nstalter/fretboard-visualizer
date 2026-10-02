@@ -122,3 +122,46 @@ func TestIdentify_MatchesAreConsistent(t *testing.T) {
 		}
 	}
 }
+
+func TestIdentify_EnharmonicSpellings(t *testing.T) {
+	// G♯7 is also A♭7: the usual spelling for a dominant 7 comes first, its twin right after it.
+	g7 := mask(t, "G♯", "B♯", "D♯", "F♯")
+	bass := mustNote(t, "G♯").SemitoneValue()
+	if got := matchNames(Identify(g7, bass))[:2]; got[0] != "A♭7/root" || got[1] != "G♯7/root" {
+		t.Errorf("G♯7: %v, want A♭7 then G♯7", got)
+	}
+	// A minor chord is spelled with sharps first, with the flat name after it.
+	gm7 := mask(t, "G♯", "B", "D♯", "F♯")
+	if got := matchNames(Identify(gm7, bass))[:2]; got[0] != "G♯m7/root" || got[1] != "A♭m7/root" {
+		t.Errorf("G♯m7: %v, want G♯m7 then A♭m7", got)
+	}
+}
+
+// A root is not offered under a second name when that would need a double sharp or flat.
+func TestIdentify_NoDoubleAccidentalRespelling(t *testing.T) {
+	eFlat := mask(t, "E♭", "G", "B♭") // E♭ major; D♯ major would be D♯ F𝄪 A♯
+	for _, name := range matchNames(Identify(eFlat, mustNote(t, "E♭").SemitoneValue())) {
+		if name == "D♯/root" {
+			t.Errorf("offered %s", name)
+		}
+	}
+}
+
+// Respelling never changes which pitch classes a chord covers, and no root has two entries for one chord.
+func TestIdentify_SpellingsAreTheSameChord(t *testing.T) {
+	for m := uint16(1); m < 1<<12; m += 7 {
+		for bass := range 12 {
+			if m&(1<<bass) == 0 {
+				continue
+			}
+			seen := map[string]bool{}
+			for _, match := range Identify(m, bass) {
+				k := match.Chord.Name() + "/" + match.Inversion.String()
+				if seen[k] {
+					t.Fatalf("mask %012b: %s listed twice", m, k)
+				}
+				seen[k] = true
+			}
+		}
+	}
+}

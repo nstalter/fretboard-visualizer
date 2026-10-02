@@ -20,6 +20,48 @@ var (
 		{Name: F, Accidental: Sharp}, {Name: G}, {Name: G, Accidental: Sharp}, {Name: A}, {Name: B, Accidental: Flat}, {Name: B}}
 )
 
+// enharmonic is the [sharp, flat] spelling of each pitch class that has two.
+var enharmonic = map[int][2]Note{
+	1:  {{Name: C, Accidental: Sharp}, {Name: D, Accidental: Flat}},
+	3:  {{Name: D, Accidental: Sharp}, {Name: E, Accidental: Flat}},
+	6:  {{Name: F, Accidental: Sharp}, {Name: G, Accidental: Flat}},
+	8:  {{Name: G, Accidental: Sharp}, {Name: A, Accidental: Flat}},
+	10: {{Name: A, Accidental: Sharp}, {Name: B, Accidental: Flat}},
+}
+
+// rootSpellings are the ways to spell pitch class pc as the root of a chord of quality q: the usual
+// spelling, then the other name of a pitch class that has two. A spelling that needs more double
+// sharps or flats than the usual one is left out (E♭ major, not D♯ major with its F𝄪).
+func rootSpellings(pc int, q ChordQuality) []Note {
+	usual := rootNote(pc, q)
+	pair, ok := enharmonic[pc]
+	if !ok {
+		return []Note{usual}
+	}
+	spellings := []Note{usual, pair[0]}
+	if usual == pair[0] {
+		spellings[1] = pair[1]
+	}
+	limit := max(1, widestAccidental(Chord{Root: usual, Quality: q}))
+	var out []Note
+	for _, root := range spellings {
+		if widestAccidental(Chord{Root: root, Quality: q}) <= limit {
+			out = append(out, root)
+		}
+	}
+	return out
+}
+
+// widestAccidental is the largest number of sharps or flats any tone of the chord is spelled with.
+func widestAccidental(c Chord) int {
+	widest := 0
+	for _, t := range c.Quality.Tones() {
+		a := int(c.Spell(t).Accidental)
+		widest = max(widest, a, -a)
+	}
+	return widest
+}
+
 // rootNote spells pitch class pc as the root of a chord of quality q.
 func rootNote(pc int, q ChordQuality) Note {
 	for _, t := range q.Tones() {
@@ -33,7 +75,8 @@ func rootNote(pc int, q ChordQuality) Note {
 // Identify returns every chord whose tones account for the pitch classes in present (a bitmask,
 // bit n = pitch class n) and that includes all of the chord's required tones, best first. bass is the
 // pitch class of the lowest note. A chord with the bass as its root comes first, then the chord with
-// the fewest tones left out, then the simplest quality.
+// the fewest tones left out, then the simplest quality. A chord whose root has two names (G♯ and A♭)
+// appears under both, the usual spelling first.
 func Identify(present uint16, bass int) []Match {
 	type ranked struct {
 		m                 Match
@@ -43,16 +86,18 @@ func Identify(present uint16, bass int) []Match {
 	var found []ranked
 	for pc := range 12 {
 		for _, q := range AllChordQualities() {
-			c := Chord{Root: rootNote(pc, q), Quality: q}
-			all, required := c.Masks()
-			if present&^all != 0 || present&required != required {
-				continue
+			for _, root := range rootSpellings(pc, q) {
+				c := Chord{Root: root, Quality: q}
+				all, required := c.Masks()
+				if present&^all != 0 || present&required != required {
+					break // the other spelling has the same tones
+				}
+				r := ranked{m: Match{c, bassInversion(c, bass)}, left: bits.OnesCount16(all &^ present), quality: q}
+				if pc != PitchClass(bass) {
+					r.bassNotRoot = 1
+				}
+				found = append(found, r)
 			}
-			r := ranked{m: Match{c, bassInversion(c, bass)}, left: bits.OnesCount16(all &^ present), quality: q}
-			if pc != PitchClass(bass) {
-				r.bassNotRoot = 1
-			}
-			found = append(found, r)
 		}
 	}
 	slices.SortStableFunc(found, func(a, b ranked) int {

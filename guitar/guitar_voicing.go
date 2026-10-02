@@ -115,7 +115,7 @@ func (v *GuitarChordVoicing) IsPlayable() bool {
 }
 
 func nonBarreChordPlayable(fingering [6]int) bool {
-	return fretSpanPlayable(fingering, 3) && hasOnlyLowStringsMuted(fingering) && frettedStringCountPlayable(fingering, -1)
+	return fretSpanPlayable(fingering, 3) && allPlayedStringsContiguous(fingering) && frettedStringCountPlayable(fingering, -1)
 }
 
 func barreChordPlayable(fingering [6]int, barreFret int) bool {
@@ -166,31 +166,6 @@ func fretSpan(fingering [6]int) int {
 		}
 	}
 	return maxFretted - minFretted
-}
-
-func hasOnlyLowStringsMuted(fingering [6]int) bool {
-	lowestPlayedIndex := lowestPlayedStringIndex(fingering)
-	for stringIdx, fret := range fingering {
-		if fret == -1 { // Muted
-			// The high E may be muted; any other muted string above the lowest played string may not
-			if stringIdx > 0 && stringIdx < lowestPlayedIndex {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-func lowestPlayedStringIndex(fingering [6]int) int {
-	lowestPlayedIndex := -1
-	for stringIdx, fret := range fingering {
-		if fret >= 0 { // Played or open
-			if lowestPlayedIndex == -1 || stringIdx > lowestPlayedIndex {
-				lowestPlayedIndex = stringIdx
-			}
-		}
-	}
-	return lowestPlayedIndex
 }
 
 func frettedStringCountPlayable(fingering [6]int, barreFret int) bool {

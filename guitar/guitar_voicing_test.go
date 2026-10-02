@@ -91,9 +91,23 @@ func TestGuitarChordVoicing_IsPlayable(t *testing.T) {
 			expected: true,
 		},
 		{
-			name: "Invalid: muting high strings",
+			name: "Valid: only the bottom four strings played (E-shape F barre without the top notes)",
 			voicing: GuitarChordVoicing{
-				Fingering: [6]int{-1, -1, 0, 2, 3, 1}, // Muting high strings is hard
+				Fingering: [6]int{-1, -1, 2, 3, 3, 1}, // 1332xx low→high
+			},
+			expected: true,
+		},
+		{
+			name: "Valid: only the middle strings played",
+			voicing: GuitarChordVoicing{
+				Fingering: [6]int{-1, 1, 0, 2, 3, -1}, // x32 01x low→high
+			},
+			expected: true,
+		},
+		{
+			name: "Invalid: a string that is not played between played strings",
+			voicing: GuitarChordVoicing{
+				Fingering: [6]int{-1, 1, -1, 2, 3, 1}, // 1 3 2 x 1 x … gap at the G string
 			},
 			expected: false,
 		},

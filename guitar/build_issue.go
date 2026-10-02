@@ -57,26 +57,8 @@ func PlayIssue(f [6]int, openMax int) string {
 	switch {
 	case v.IsPlayable():
 		return ""
-	case hasMutedBetween(f):
+	case !allPlayedStringsContiguous(f):
 		return "a muted string sits between played strings"
 	}
 	return "those notes can't be fingered comfortably"
-}
-
-func hasMutedBetween(f [6]int) bool {
-	first, last := -1, -1
-	for i, fret := range f {
-		if fret >= 0 {
-			if first < 0 {
-				first = i
-			}
-			last = i
-		}
-	}
-	for i := first + 1; i < last; i++ {
-		if f[i] < 0 {
-			return true
-		}
-	}
-	return false
 }

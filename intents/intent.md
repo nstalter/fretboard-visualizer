@@ -52,7 +52,7 @@ The inversion is set by the lowest sounding **pitch** (not the lowest string, si
 Keep the current rules:
 - At least 3 strings played.
 - A fret span of 3 or less.
-- Non-barre shapes: at most 4 fretted fingers, and only low strings may be muted.
+- Non-barre shapes: at most 4 fretted fingers, and the played strings must be next to each other (strings at either end may be left unplayed, none in the middle).
 - Barre shapes: the barre plus at most 3 fingers, all played strings next to each other, and no fretted note below the barre.
 
 Also required:

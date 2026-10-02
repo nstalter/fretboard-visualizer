@@ -65,6 +65,17 @@ func TestIdentify_AlternativesAndInversion(t *testing.T) {
 	}
 }
 
+func TestIdentify_OffersBothSpellings(t *testing.T) {
+	// The E7 barre shape at fret 4 is G♯7, also written A♭7: both names come back, A♭7 first.
+	_, resp, _ := identifyGet(t, "464544")
+	if len(resp.Chords) < 2 || resp.Chords[0].Name != "A♭7" || resp.Chords[1].Name != "G♯7" {
+		t.Fatalf("464544: %+v, want A♭7 then G♯7", resp.Chords)
+	}
+	if g := resp.Chords[1]; g.Root != "G♯" || g.Quality != "7" || g.Inversion != "root" || g.Voicing.Fingering != "464544" {
+		t.Errorf("G♯7 entry = %+v", g)
+	}
+}
+
 func TestIdentify_Unfinished(t *testing.T) {
 	for shape, want := range map[string]string{
 		"xxxxxx": "a chord needs at least three notes",
