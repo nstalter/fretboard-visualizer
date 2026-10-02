@@ -137,13 +137,20 @@ func TestIdentify_EnharmonicSpellings(t *testing.T) {
 	}
 }
 
-// A root is not offered under a second name when that would need a double sharp or flat.
-func TestIdentify_NoDoubleAccidentalRespelling(t *testing.T) {
-	eFlat := mask(t, "E♭", "G", "B♭") // E♭ major; D♯ major would be D♯ F𝄪 A♯
-	for _, name := range matchNames(Identify(eFlat, mustNote(t, "E♭").SemitoneValue())) {
-		if name == "D♯/root" {
-			t.Errorf("offered %s", name)
+// Every chord whose root has two names is offered under both, even when one needs a double sharp
+// (E♭11 and D♯11, whose optional 3rd would be F𝄪).
+func TestIdentify_EveryEnharmonicRootIsOfferedBothWays(t *testing.T) {
+	eb11 := mask(t, "E♭", "D♭", "A♭") // R, b7, 11
+	names := matchNames(Identify(eb11, mustNote(t, "E♭").SemitoneValue()))
+	for _, want := range []string{"E♭11/root", "D♯11/root"} {
+		if !slices.Contains(names, want) {
+			t.Errorf("E♭ D♭ A♭: %v lacks %s", names, want)
 		}
+	}
+	eFlat := mask(t, "E♭", "G", "B♭")
+	names = matchNames(Identify(eFlat, mustNote(t, "E♭").SemitoneValue()))
+	if !slices.Contains(names, "D♯/root") {
+		t.Errorf("E♭ major: %v lacks D♯", names)
 	}
 }
 

@@ -30,36 +30,17 @@ var enharmonic = map[int][2]Note{
 }
 
 // rootSpellings are the ways to spell pitch class pc as the root of a chord of quality q: the usual
-// spelling, then the other name of a pitch class that has two. A spelling that needs more double
-// sharps or flats than the usual one is left out (E♭ major, not D♯ major with its F𝄪).
+// spelling, then the other name of a pitch class that has two (G♯ and A♭).
 func rootSpellings(pc int, q ChordQuality) []Note {
 	usual := rootNote(pc, q)
 	pair, ok := enharmonic[pc]
 	if !ok {
 		return []Note{usual}
 	}
-	spellings := []Note{usual, pair[0]}
 	if usual == pair[0] {
-		spellings[1] = pair[1]
+		return []Note{usual, pair[1]}
 	}
-	limit := max(1, widestAccidental(Chord{Root: usual, Quality: q}))
-	var out []Note
-	for _, root := range spellings {
-		if widestAccidental(Chord{Root: root, Quality: q}) <= limit {
-			out = append(out, root)
-		}
-	}
-	return out
-}
-
-// widestAccidental is the largest number of sharps or flats any tone of the chord is spelled with.
-func widestAccidental(c Chord) int {
-	widest := 0
-	for _, t := range c.Quality.Tones() {
-		a := int(c.Spell(t).Accidental)
-		widest = max(widest, a, -a)
-	}
-	return widest
+	return []Note{usual, pair[0]}
 }
 
 // rootNote spells pitch class pc as the root of a chord of quality q.
