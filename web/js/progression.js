@@ -20,7 +20,7 @@ export function renderSteps(list, steps, selected, { onSelect, onMove, onDelete 
   });
 }
 
-function iconButton(text, label, disabled, onClick) {
+export function iconButton(text, label, disabled, onClick) {
   const b = document.createElement('button');
   b.className = 'icon';
   b.textContent = text;

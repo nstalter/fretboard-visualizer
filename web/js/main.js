@@ -1,7 +1,8 @@
 import * as api from './api.js';
 import { renderFretboard } from './fretboard.js';
-import { PRESETS, STANDARD, noteName, pitchClassName, tuningParam, canStep, presetName } from './tuning.js';
+import { PRESETS, STANDARD, noteName, pitchClassName, tuningParam, parseTuningParam, canStep, presetName } from './tuning.js';
 import { renderSteps, Player } from './progression.js';
+import { initLibrary } from './library.js';
 
 const ROOTS = ['C', 'C♯', 'D♭', 'D', 'D♯', 'E♭', 'E', 'F', 'F♯', 'G♭', 'G', 'G♯', 'A♭', 'A', 'A♯', 'B♭', 'B'];
 const MODES = ['ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian'];
@@ -210,6 +211,10 @@ function addStep() {
   const e = state.explorer;
   const v = currentVoicing();
   if (!v || !e.chord) return;
+  if (state.steps.length >= 64) {
+    showError(new Error('A progression can have at most 64 chords.'));
+    return;
+  }
   let numeral = null;
   if (e.chooser === 'mode') numeral = e.diatonic[e.degree - 1]?.numeral ?? null;
   else if (state.selectedStep) numeral = state.selectedStep.numeral;
@@ -231,6 +236,36 @@ async function loadStep(step) {
   e.lastFingering = step.fingering;
   render();
   await loadVoicings({ near: step.fingering, exact: step.fingering });
+}
+
+// snapshot is the progression and its settings in the shape the library saves.
+function snapshot() {
+  return {
+    tuning: tuningParam(state.tuning), openMax: state.openMax,
+    bpm: state.playback.bpm, beats: state.playback.beatsPerChord,
+    steps: state.steps.map(({ root, quality, inversion, name, numeral, fingering }) =>
+      ({ root, quality, inversion, name, numeral, fingering })),
+  };
+}
+
+// loadSaved replaces the progression and its settings with a snapshot-shaped one, keeping each step's
+// saved shape, and shows the first step (a saved progression always has one). It throws, changing nothing,
+// if the tuning is unreadable.
+async function loadSaved({ tuning, openMax, bpm, beats, steps }) {
+  const midi = parseTuningParam(tuning);
+  if (!midi) throw new Error(`Saved tuning “${tuning}” is not valid`);
+  pause();
+  state.tuning = midi;
+  state.openMax = openMax;
+  state.playback.bpm = bpm;
+  state.playback.beatsPerChord = beats;
+  $('open-max').value = openMax;
+  $('bpm').value = bpm;
+  $('beats').value = beats;
+  state.steps = steps.map(({ root, quality, inversion, name, numeral, fingering }) =>
+    ({ root, quality, inversion, name, numeral: numeral ?? null, fingering }));
+  state.selectedStep = null;
+  await loadStep(state.steps[0]);
 }
 
 function stepPlayback(delta) {
@@ -325,7 +360,7 @@ function render() {
   });
   $('steps-empty').hidden = state.steps.length > 0;
   const hasSteps = state.steps.length > 0;
-  $('play').disabled = $('play-prev').disabled = $('play-next').disabled = !hasSteps;
+  $('play').disabled = $('play-prev').disabled = $('play-next').disabled = $('save-open').disabled = !hasSteps;
   renderPlayButton();
 }
 
@@ -412,6 +447,7 @@ async function start() {
   render();
   await loadDiatonic();
   await loadVoicings({ near: null });
+  initLibrary({ snapshot, load: loadSaved, showError });
 }
 
 start();

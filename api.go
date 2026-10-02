@@ -310,6 +310,10 @@ func handleProgression(w http.ResponseWriter, r *http.Request) {
 		writeError(w, paramError("body", err))
 		return
 	}
+	if len(req.Steps) > maxSteps {
+		writeError(w, paramError("steps", fmt.Errorf("want at most %d steps, got %d", maxSteps, len(req.Steps))))
+		return
+	}
 	tuning, err := parseTuningParam(req.Tuning)
 	if err != nil {
 		writeError(w, err)

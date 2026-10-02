@@ -547,6 +547,23 @@ func TestProgression_Errors(t *testing.T) {
 	}
 }
 
+func TestProgression_StepLimit(t *testing.T) {
+	srv := newServer(t)
+	steps := func(n int) []step {
+		s := make([]step, n)
+		for i := range s {
+			s[i] = step{"C", "maj", ""}
+		}
+		return s
+	}
+	if shapes := progression(t, srv, std, steps(64)); len(shapes) != 64 {
+		t.Errorf("%d shapes for 64 steps", len(shapes))
+	}
+	b, _ := json.Marshal(map[string]any{"tuning": std, "steps": steps(65)})
+	code, body := post(t, srv, "/api/progression", string(b))
+	expect400(t, code, body, "steps: want at most 64 steps, got 65")
+}
+
 type atResp struct {
 	voicingsResp
 	AtMatched *bool

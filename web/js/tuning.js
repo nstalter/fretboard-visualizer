@@ -21,6 +21,22 @@ const PITCH_CLASSES = ['C', 'C♯/D♭', 'D', 'D♯/E♭', 'E', 'F', 'F♯/G♭'
 export const pitchClassName = (midi) => PITCH_CLASSES[midi % 12];
 export const pitchName = (midi) => `${noteName(midi)}${Math.floor(midi / 12) - 1}`;
 export const tuningParam = (tuning) => tuning.map(pitchName).join(',');
+
+// parseTuningParam is the inverse of tuningParam: "E2,A2,D3,G3,B3,E4" → MIDI numbers low→high, or null if malformed.
+const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+export function parseTuningParam(s) {
+  const parts = String(s).split(',');
+  if (parts.length !== 6) return null;
+  const midi = [];
+  for (const part of parts) {
+    const m = /^([A-G])([#♯]*|[b♭]*)(\d+)$/.exec(part.trim());
+    if (!m) return null;
+    const accidental = m[2] === '' ? 0 : (m[2][0] === '#' || m[2][0] === '♯' ? 1 : -1) * m[2].length;
+    midi.push((Number(m[3]) + 1) * 12 + SEMITONES[m[1]] + accidental);
+  }
+  return midi;
+}
+
 export const canStep = (tuning, i, delta) => Math.abs(tuning[i] + delta - STANDARD[i]) <= MAX_OFFSET;
 
 export function presetName(tuning) {

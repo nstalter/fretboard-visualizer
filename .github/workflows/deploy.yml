@@ -42,3 +42,4 @@ jobs:
         run: |
           sleep 3
           curl --fail --silent --show-error --retry 5 --retry-delay 2 https://fretboard.tail9292f9.ts.net/ > /dev/null
+          curl --fail --silent --show-error https://fretboard.tail9292f9.ts.net/api/me | grep '"enabled"'

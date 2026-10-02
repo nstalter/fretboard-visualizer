@@ -11,6 +11,7 @@
   <header>
     <h1>Fretboard Visualizer</h1>
     <p id="status" role="status"></p>
+    <div id="account" class="account" hidden></div>
   </header>
 
   <main>
@@ -74,10 +75,41 @@
           <button id="play-next" aria-label="Next step">⏭</button>
           <label>BPM <input id="bpm" type="number" min="20" max="300" value="90"></label>
           <label>Beats per chord <input id="beats" type="number" min="1" max="16" value="4"></label>
+          <button id="save-open" aria-expanded="false" aria-controls="save-form" hidden>Save to song…</button>
         </div>
       </div>
+      <form id="save-form" class="form-row" hidden>
+        <label>Song <select id="save-song"></select></label>
+        <label id="save-title-label">New song name <input id="save-title" type="text" maxlength="100" autocomplete="off"></label>
+        <label id="save-folder-label">Folder <select id="save-folder"></select></label>
+        <label>Section name <input id="save-name" type="text" maxlength="100" list="section-names" autocomplete="off" required></label>
+        <datalist id="section-names">
+          <option value="Verse"></option>
+          <option value="Pre-chorus"></option>
+          <option value="Chorus"></option>
+          <option value="Bridge"></option>
+          <option value="Intro"></option>
+          <option value="Outro"></option>
+        </datalist>
+        <button type="submit" class="primary">Save as new section</button>
+        <button type="button" id="save-update" hidden></button>
+        <button type="button" id="save-cancel">Cancel</button>
+      </form>
       <ol id="steps" class="steps"></ol>
       <p id="steps-empty" class="hint">No chords yet. Pick a chord and press “Add to progression”.</p>
+      <p id="save-status" class="hint" role="status"></p>
+    </section>
+
+    <section class="panel" id="library" aria-labelledby="library-title" hidden>
+      <div class="panel-head">
+        <h2 id="library-title">Library</h2>
+        <div class="playback">
+          <button id="new-folder">New folder</button>
+          <button id="new-song">New song</button>
+        </div>
+      </div>
+      <div id="library-tree"></div>
+      <p id="library-empty" class="hint">No songs yet. Build a progression and press “Save to song…”.</p>
     </section>
   </main>
 </body>

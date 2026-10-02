@@ -36,3 +36,8 @@ go.work.sum
 
 # macOS
 .DS_Store
+
+# Local SQLite database
+*.db
+*.db-shm
+*.db-wal
