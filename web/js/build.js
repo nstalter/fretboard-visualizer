@@ -23,15 +23,17 @@ function fingeringParam(frets) {
 
 // identify asks the server about a shape and, if it is not ruled out, makes it the built shape. It
 // throws the server's reason, leaving the built shape as it was, if no further notes could make the shape playable.
+// It returns false if a newer call has taken over, in which case it changed nothing.
 async function identify(frets, { tuning, openMax }) {
   const my = ++seq;
   if (frets.every((f) => f < 0)) {
     Object.assign(builder, { frets: [...NONE], chords: [], pick: 0, playable: false, issue: '' });
-    return;
+    return true;
   }
   const res = await api.identify({ fingering: fingeringParam(frets), tuning, openMax });
-  if (my !== seq) return;
+  if (my !== seq) return false;
   Object.assign(builder, { frets: [...frets], chords: res.chords, pick: 0, playable: res.playable, issue: res.issue });
+  return true;
 }
 
 // place puts a note at a string (low→high) and fret, or removes it if that note is already there.
@@ -41,15 +43,31 @@ export function place(string, fret, settings) {
   return identify(next, settings);
 }
 
-// refresh re-checks the built shape after the tuning or open-string limit changed. The shape is
-// cleared, and the reason thrown, if it no longer works.
-export async function refresh(settings) {
+// parseFingering reads the API's low→high fingering ("x32310", or dashed when a fret is above 9).
+function parseFingering(s) {
+  return (s.includes('-') ? s.split('-') : s.split('')).map((t) => (t === 'x' ? -1 : Number(t)));
+}
+
+// reset makes frets the built shape. The shape is cleared, and the reason thrown, if the server
+// rules it out.
+async function reset(frets, settings) {
   try {
-    await identify(builder.frets, settings);
+    return await identify(frets, settings);
   } catch (err) {
     clear();
     throw err;
   }
+}
+
+// refresh re-checks the built shape after the tuning or open-string limit changed.
+export const refresh = (settings) => reset(builder.frets, settings);
+
+// load makes a shape (a fingering string, or null for none) the built shape, so it can be edited. If
+// want ({root, quality}) names one of the chords the shape spells, that one is selected, so a G♯7 stays G♯7.
+export async function load(fingering, settings, want) {
+  const applied = await reset(fingering ? parseFingering(fingering) : NONE, settings);
+  const i = want ? builder.chords.findIndex((c) => c.root === want.root && c.quality === want.quality) : -1;
+  if (applied && i > 0) builder.pick = i;
 }
 
 export function clear() {

@@ -175,10 +175,24 @@ async function pickBuildSpot(string, fret) {
   render();
 }
 
+// Build mode starts from the shape on the board, so it can be edited.
 function toggleBuild() {
   pause();
   build.builder.on = !build.builder.on;
+  build.clear();
   showError(null);
+  render();
+  if (build.builder.on) loadIntoBuild(currentVoicing()?.fingering ?? null, state.explorer.chord);
+}
+
+// loadIntoBuild makes a shape the built shape, selecting the name of want ({root, quality}) if the shape
+// has it. If it can't be built on, the board is left empty.
+async function loadIntoBuild(fingering, want) {
+  try {
+    await build.load(fingering, buildSettings(), want);
+  } catch (err) {
+    showError(new Error(`Could not edit that shape: ${err.message}`));
+  }
   render();
 }
 
@@ -275,13 +289,13 @@ function addStep() {
 // loadStep selects a step and shows it in the explorer. It does not pause playback.
 async function loadStep(step) {
   const e = state.explorer;
-  build.builder.on = false;
   state.selectedStep = step;
   e.chooser = 'type';
   e.root = step.root;
   e.quality = step.quality;
   e.inversion = step.inversion;
   e.lastFingering = step.fingering;
+  if (build.builder.on) await loadIntoBuild(step.fingering, step); // stay in Build mode, now editing this step's shape
   render();
   await loadVoicings({ near: step.fingering, exact: step.fingering });
 }
