@@ -30,6 +30,8 @@ export const qualities = () => request('/api/qualities');
 export const voicings = ({ root, quality, inversion, tuning, openMax, near, at }) =>
   get('/api/voicings', { root, quality, inversion, tuning, openMax, near, at });
 
+export const identify = ({ fingering, tuning, openMax }) => get('/api/identify', { fingering, tuning, openMax });
+
 export const diatonic = ({ key, mode }) => get('/api/diatonic', { key, mode });
 
 export const progression = ({ tuning, openMax, steps }) =>

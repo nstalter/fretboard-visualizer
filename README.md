@@ -16,6 +16,7 @@ The app generates playable chord positions by rule (fret span, finger count, mut
 - Any 6-string tuning within ±5 semitones of standard, with presets (Drop D, DADGAD, Open G, …)
 - Diatonic chords for any key and mode, with Roman numerals
 - Progressions with fixed shapes, reordering, and looped playback
+- Build a chord by placing notes on the fretboard: the app names it, offers other names for the same notes, and refuses shapes that can't be played
 
 ## Running
 
@@ -57,7 +58,7 @@ go vet ./... && go test ./...
 
 - `music/`: instrument-independent theory: notes, chord spelling, inversions and diatonic chords (standard library only)
 - `guitar/`: tunings, fingerings, voicing generation, playability and nearest voicing; depends on `music/`
-- `api.go`: the stateless JSON API (`/api/qualities`, `/api/voicings`, `/api/diatonic`, `/api/progression`)
+- `api.go`: the stateless JSON API (`/api/qualities`, `/api/voicings`, `/api/diatonic`, `/api/progression`, `/api/identify`)
 - `accounts.go`: wires sign-in and saved songs into the server, or reports that they are disabled
 - `songs_api.go`: the signed-in user's JSON API for folders, songs and progressions (`/api/library`, `/api/folders`, `/api/songs`, `/api/progressions`)
 - `auth/`: Amazon Cognito sign-in (OAuth 2.0 authorization code flow with PKCE) and server-side sessions

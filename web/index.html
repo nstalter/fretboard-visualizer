@@ -17,23 +17,23 @@
   <main>
     <section class="panel" id="explorer" aria-labelledby="chord-name">
       <div class="controls">
-        <div class="segmented" role="group" aria-label="Choose chord by">
+        <div class="segmented" role="group" aria-label="Choose chord by" data-explorer-only>
           <button id="chooser-mode" data-chooser="mode">Key + mode</button>
           <button id="chooser-type" data-chooser="type">Key + type</button>
         </div>
 
-        <div id="type-pickers" class="pickers">
+        <div id="type-pickers" class="pickers" data-explorer-only>
           <label>Root <select id="root"></select></label>
           <label>Quality <select id="quality"></select></label>
         </div>
 
-        <div id="mode-pickers" class="pickers" hidden>
+        <div id="mode-pickers" class="pickers" data-explorer-only hidden>
           <label>Key <select id="key"></select></label>
           <label>Mode <select id="mode"></select></label>
           <label>Quality <select id="mode-quality"></select></label>
         </div>
 
-        <label>Inversion <select id="inversion"></select></label>
+        <label data-explorer-only>Inversion <select id="inversion"></select></label>
 
         <label title="Pick a preset, or use the arrows beside each string name on the fretboard">Tuning <select id="preset"></select></label>
 
@@ -46,12 +46,14 @@
           <button id="label-intervals" data-label="intervals">Intervals</button>
         </div>
 
-        <button id="show-all" aria-pressed="false" title="Show every chord tone across the whole neck">All chord tones</button>
+        <button id="show-all" data-explorer-only aria-pressed="false" title="Show every chord tone across the whole neck">All chord tones</button>
+
+        <button id="build-toggle" aria-pressed="false" title="Place notes on the fretboard yourself and have the chord named">Build a chord</button>
       </div>
 
-      <div id="degrees" class="degrees" hidden></div>
+      <div id="degrees" class="degrees" data-explorer-only hidden></div>
 
-      <div class="chord-bar">
+      <div class="chord-bar" id="chord-bar">
         <h2 id="chord-name">…</h2>
         <div class="nav">
           <button id="prev-shape" aria-label="Previous shape">◀</button>
@@ -59,6 +61,14 @@
           <button id="next-shape" aria-label="Next shape">▶</button>
         </div>
         <button id="add-step" class="primary">Add to progression</button>
+      </div>
+
+      <div class="build-bar" id="build-bar" hidden>
+        <h2 id="build-name">…</h2>
+        <div id="build-alts" class="alts" role="group" aria-label="Other names for these notes"></div>
+        <button id="build-clear">Clear</button>
+        <button id="build-add" class="primary">Add to progression</button>
+        <p id="build-hint" class="hint" role="status"></p>
       </div>
 
       <div class="board-scroll">

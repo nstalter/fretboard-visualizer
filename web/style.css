@@ -103,6 +103,11 @@ input[type="number"] { width: 64px; }
   margin: 16px 0 8px;
 }
 #chord-name { font-size: 26px; min-width: 120px; }
+#explorer.building [data-explorer-only] { display: none; }
+.build-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin: 16px 0 8px; }
+#build-name { font-size: 26px; min-width: 120px; }
+.build-bar .alts { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+.build-bar .hint { flex-basis: 100%; }
 .nav { display: inline-flex; align-items: center; gap: 8px; }
 #counter { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 64px; text-align: center; }
 

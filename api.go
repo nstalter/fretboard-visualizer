@@ -18,6 +18,7 @@ func newMux(static fs.FS) *http.ServeMux {
 	mux.HandleFunc("GET /api/qualities", handleQualities)
 	mux.HandleFunc("GET /api/voicings", handleVoicings)
 	mux.HandleFunc("GET /api/diatonic", handleDiatonic)
+	mux.HandleFunc("GET /api/identify", handleIdentify)
 	mux.HandleFunc("POST /api/progression", handleProgression)
 	mux.Handle("GET /", http.FileServerFS(static))
 	return mux

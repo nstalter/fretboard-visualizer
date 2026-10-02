@@ -3,6 +3,7 @@ import { renderFretboard } from './fretboard.js';
 import { PRESETS, STANDARD, noteName, pitchClassName, tuningParam, parseTuningParam, canStep, presetName } from './tuning.js';
 import { renderSteps, Player } from './progression.js';
 import { initLibrary } from './library.js';
+import * as build from './build.js';
 
 const ROOTS = ['C', 'C♯', 'D♭', 'D', 'D♯', 'E♭', 'E', 'F', 'F♯', 'G♭', 'G', 'G♯', 'A♭', 'A', 'A♯', 'B♭', 'B'];
 const MODES = ['ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian'];
@@ -156,6 +157,44 @@ async function pickSpot(string, fret) {
   }
 }
 
+// ---- build mode ----
+
+const builtSpotName = (s, f) => pitchClassName(state.tuning[s] + f);
+const buildSettings = () => ({ tuning: tuningParam(state.tuning), openMax: state.openMax });
+
+// pickBuildSpot places or removes a note. The server may refuse it (the shape could never be played);
+// the board then stays as it was and the reason is shown.
+async function pickBuildSpot(string, fret) {
+  pause();
+  try {
+    await build.place(string, fret, buildSettings());
+    showError(null);
+  } catch (err) {
+    showError(new Error(`Not playable: ${err.message}`));
+  }
+  render();
+}
+
+function toggleBuild() {
+  pause();
+  build.builder.on = !build.builder.on;
+  showError(null);
+  render();
+}
+
+function addBuiltStep() {
+  pause();
+  const step = build.builtStep();
+  if (!step) return;
+  if (state.steps.length >= 64) {
+    showError(new Error('A progression can have at most 64 chords.'));
+    return;
+  }
+  state.steps.push(step);
+  showError(null);
+  render();
+}
+
 // ---- tuning and open-string limit ----
 
 // applySettingChange recalculates every step's shape for the current tuning and open-string
@@ -191,6 +230,14 @@ async function applySettingChange() {
   // loadVoicings clears the status line on success; keep the recalculation failure visible.
   if (failure && my === settingSeq && !$('status').textContent) {
     showError(new Error(`Could not recalculate the progression: ${failure.message}`));
+  }
+  if (build.builder.on) {
+    try {
+      await build.refresh(buildSettings());
+    } catch (err) {
+      showError(new Error(`The built shape was cleared: ${err.message}`));
+    }
+    render();
   }
 }
 
@@ -228,6 +275,7 @@ function addStep() {
 // loadStep selects a step and shows it in the explorer. It does not pause playback.
 async function loadStep(step) {
   const e = state.explorer;
+  build.builder.on = false;
   state.selectedStep = step;
   e.chooser = 'type';
   e.root = step.root;
@@ -341,14 +389,26 @@ function render() {
   $('prev-shape').disabled = $('next-shape').disabled = e.voicings.length < 2;
   $('add-step').disabled = !v;
 
+  const building = build.builder.on;
+  $('build-toggle').classList.toggle('on', building);
+  $('build-toggle').setAttribute('aria-pressed', String(building));
+  $('chord-bar').hidden = building;
+  $('explorer').classList.toggle('building', building);
+  $('build-bar').hidden = !building;
+  if (building) {
+    build.renderBar({ name: $('build-name'), alts: $('build-alts'), hint: $('build-hint'), add: $('build-add') },
+      { onPick: (i) => { build.pickChord(i); render(); } });
+  }
+  const built = building ? build.view(builtSpotName) : null;
+
   renderFretboard($('fretboard'), {
     stringNames: state.tuning.map(noteName),
-    voicing: v,
-    chordTones: e.chord?.tones ?? [],
+    voicing: built ? built.voicing : v,
+    chordTones: built ? built.chordTones : (e.chord?.tones ?? []),
     labelMode: state.labelMode,
-    allTones: state.showAll ? e.fretboard : null,
-    spotName,
-    onPick: pickSpot,
+    allTones: state.showAll && !building ? e.fretboard : null,
+    spotName: building ? builtSpotName : spotName,
+    onPick: building ? pickBuildSpot : pickSpot,
     onTune: (s, delta) => onTuningChange(state.tuning.map((m, k) => (k === s ? m + delta : m))),
     canTune: (s, delta) => canStep(state.tuning, s, delta),
   });
@@ -397,6 +457,9 @@ function wire() {
     b.addEventListener('click', () => { pause(); state.labelMode = b.dataset.label; render(); });
   }
   $('show-all').addEventListener('click', () => { pause(); state.showAll = !state.showAll; render(); });
+  $('build-toggle').addEventListener('click', toggleBuild);
+  $('build-clear').addEventListener('click', () => { build.clear(); showError(null); render(); });
+  $('build-add').addEventListener('click', addBuiltStep);
 
   $('open-max').value = state.openMax;
   $('open-max').addEventListener('change', (ev) => {
